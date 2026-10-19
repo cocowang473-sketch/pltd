@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteRepositoriesConfiguration">
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://repo.maven.apache.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="mvn-private-mirror" />
+      <option name="name" value="mvn-private-mirror" />
+      <option name="url" value="https://depend.iflytek.com/artifactory/cbg-mvn-private-repo" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://depend.iflytek.com/artifactory/mvn-public-repo/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="mvn-history-mirror" />
+      <option name="name" value="mvn-history-mirror" />
+      <option name="url" value="https://depend.iflytek.com/artifactory/history-mvn-repo/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Maven Central repository" />
+      <option name="url" value="https://repo1.maven.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jboss.community" />
+      <option name="name" value="JBoss Community repository" />
+      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="mvn-public-mirror" />
+      <option name="name" value="mvn-public-mirror" />
+      <option name="url" value="https://depend.iflytek.com/artifactory/mvn-public-repo/" />
+    </remote-repository>
+  </component>
+</project>

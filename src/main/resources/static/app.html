@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>PLDT Chat Demo</title>
+    <style>
+      :root {
+        --red: #df3435;
+        --red-dark: #bd2429;
+        --red-soft: #f35b5d;
+        --ink: #202125;
+        --muted: #74767e;
+        --line: #ececef;
+        --thread: #f7f7f9;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { width: 100%; min-height: 100%; }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--thread);
+        overscroll-behavior: none;
+      }
+
+      button, input, select { font: inherit; }
+      button { -webkit-tap-highlight-color: transparent; }
+
+      .app-shell {
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 100svh;
+      }
+
+      .screen {
+        height: 100%;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        background: var(--thread);
+      }
+
+      .app-header {
+        padding: max(14px, env(safe-area-inset-top)) 18px 18px;
+        color: #fff;
+        background:
+          radial-gradient(circle, rgba(255, 255, 255, 0.08) 0 2px, transparent 2.6px) 0 0 / 15px 15px,
+          linear-gradient(180deg, #ec494b 0%, var(--red-dark) 100%);
+        border-radius: 0 0 24px 24px;
+      }
+
+      .app-bar {
+        min-height: 64px;
+        display: grid;
+        grid-template-columns: 42px 1fr auto;
+        align-items: center;
+        gap: 8px;
+        direction: ltr;
+      }
+
+      .brand { display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px 12px 12px 4px;
+        display: grid;
+        place-items: center;
+        color: var(--red-dark);
+        background: #fff;
+        font-size: 13px;
+        font-weight: 900;
+        box-shadow: 0 5px 14px rgba(86, 8, 12, 0.18);
+        overflow: hidden;
+      }
+
+      .brand-mark img { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+      .brand-copy { min-width: 0; }
+      .brand-copy strong, .brand-copy span { display: block; }
+      .brand-copy strong { font-size: 15px; letter-spacing: -0.01em; }
+      .brand-copy span { margin-top: 2px; color: rgba(255, 255, 255, 0.76); font-size: 10px; }
+
+      .header-button {
+        width: 38px;
+        height: 38px;
+        border: 0;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: rgba(109, 5, 12, 0.13);
+        cursor: pointer;
+      }
+
+      .header-button:hover { background: rgba(109, 5, 12, 0.24); }
+
+      .header-button:focus-visible,
+      .quick-prompt:focus-visible,
+      .composer button:focus-visible,
+      .composer input:focus-visible {
+        outline: 3px solid rgba(255, 255, 255, 0.85);
+        outline-offset: 2px;
+      }
+
+      .header-button svg,
+      .send-icon {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .chatbot-thread {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 22px 18px 30px;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+      }
+
+      .chatbot-thread::-webkit-scrollbar { display: none; }
+
+      .welcome {
+        min-height: 100%;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        padding: 14px 0 34px;
+        text-align: center;
+      }
+
+      .assistant-avatar {
+        width: 128px;
+        height: 128px;
+        margin-bottom: 12px;
+        display: grid;
+        place-items: center;
+      }
+
+      .assistant-avatar img { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+      .welcome h2 { margin: 0; font-size: 24px; line-height: 1.15; letter-spacing: -0.03em; }
+      .welcome p { max-width: 270px; margin: 8px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+      .quick-prompts { width: 100%; display: grid; gap: 8px; }
+
+      .quick-prompt {
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: #3d3e43;
+        background: #fff;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 650;
+        cursor: pointer;
+        box-shadow: 0 5px 12px rgba(46, 46, 53, 0.04);
+      }
+
+      .quick-prompt:hover { border-color: #f2b6b7; color: var(--red-dark); }
+      .quick-prompt span:last-child { color: var(--red); font-size: 17px; }
+
+      .chatbot-message {
+        width: fit-content;
+        max-width: 88%;
+        margin: 0 0 12px;
+        padding: 12px 14px;
+        border-radius: 17px;
+        font-size: 13px;
+        line-height: 1.48;
+        overflow-wrap: anywhere;
+      }
+
+      .chatbot-message--user {
+        margin-left: auto;
+        color: #fff;
+        background: linear-gradient(145deg, #ed4a4c, #cf292e);
+        border-bottom-right-radius: 5px;
+        box-shadow: 0 6px 14px rgba(186, 34, 39, 0.16);
+      }
+
+      .chatbot-message--assistant,
+      .chatbot-message--loading {
+        margin-right: auto;
+        color: #35363a;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-bottom-left-radius: 5px;
+        box-shadow: 0 5px 14px rgba(36, 37, 43, 0.05);
+      }
+
+      .chatbot-message--loading { color: var(--muted); }
+      .chatbot-message p { margin: 0 0 9px; }
+      .chatbot-message p:last-child { margin-bottom: 0; }
+      .chatbot-message h1, .chatbot-message h2, .chatbot-message h3 { margin: 0 0 8px; line-height: 1.3; }
+      .chatbot-message h1 { font-size: 1.28em; }
+      .chatbot-message h2 { font-size: 1.16em; }
+      .chatbot-message h3 { font-size: 1.06em; }
+      .chatbot-message ul, .chatbot-message ol { margin: 0 0 9px; padding-left: 20px; }
+      .chatbot-message li + li { margin-top: 4px; }
+      .chatbot-message code { padding: 1px 4px; border-radius: 4px; background: #f1f1f3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+      .chatbot-search-results {
+        display: grid;
+        gap: 9px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        font-size: 11px;
+      }
+
+      .chatbot-search-result { display: block; }
+      .chatbot-search-more, .chatbot-search-more-content { display: grid; gap: 9px; }
+      .chatbot-search-more summary, .chatbot-citation { color: var(--red-dark); font-weight: 750; }
+      .chatbot-search-more summary { cursor: pointer; }
+      .chatbot-interruption { margin: 10px 0 0; color: #8a5612; font-size: 11px; }
+
+      .search-group { display: grid; gap: 10px; }
+      .search-group + .search-group { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+      .search-card { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fafafb; }
+      .search-card-title { margin: 0 0 6px; font-size: 1.06em; line-height: 1.3; }
+      .search-card-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        color: var(--red-dark);
+        font-weight: 650;
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .search-card-link:hover { text-decoration: underline; }
+      .search-card-link-icon {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ec4899;
+        color: #fff;
+        display: inline-grid;
+        place-items: center;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        flex: none;
+      }
+      .search-card-summary { margin: 0; color: #54555c; font-size: 12px; line-height: 1.5; }
+      .search-empty { color: var(--muted); }
+
+      .composer-wrap { padding: 9px 12px max(13px, env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--line); }
+      .composer { display: grid; grid-template-columns: minmax(0, 1fr) 42px 46px; gap: 8px; align-items: center; }
+
+      .composer input {
+        min-width: 0;
+        height: 46px;
+        padding: 0 16px;
+        color: var(--ink);
+        background: #f5f5f7;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        outline: 0;
+        font-size: 12px;
+      }
+
+      .composer input:focus { border-color: #efa9ab; background: #fff; }
+
+      .composer button {
+        width: 46px;
+        height: 46px;
+        border: 0;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: linear-gradient(145deg, var(--red-soft), var(--red-dark));
+        cursor: pointer;
+        box-shadow: 0 6px 14px rgba(190, 35, 40, 0.28);
+      }
+
+      .composer button:disabled { opacity: 0.55; cursor: wait; }
+      .composer .voice-input-button {
+        width: 42px;
+        height: 42px;
+        color: var(--red-dark);
+        background: #fff;
+        border: 1px solid #efc5c6;
+        box-shadow: none;
+      }
+      .voice-input-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+      .voice-input-button .stop-icon { display: none; fill: currentColor; stroke: none; }
+      .voice-input-button.is-recording { color: #fff; background: var(--red-dark); animation: recording-pulse 1.4s ease-in-out infinite; }
+      .voice-input-button.is-recording .microphone-icon { display: none; }
+      .voice-input-button.is-recording .stop-icon { display: block; }
+
+      @keyframes recording-pulse {
+        50% { box-shadow: 0 0 0 6px rgba(189, 36, 41, 0.14); }
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .chatbot-thread { scroll-behavior: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell" aria-label="PLDT Mobile Chat Demo">
+      <div class="screen">
+          <header class="app-header">
+            <div class="app-bar">
+              <button id="new-chat" class="header-button" type="button" aria-label="Home" title="Home">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10M9 20v-6h6v6"></path></svg>
+              </button>
+              <div class="brand">
+                <span class="brand-mark" aria-hidden="true"><img src="/static/ezzy-logo.png" alt=""></span>
+                <span class="brand-copy"><strong>PLDT</strong><span id="brand-status">Online · Here to help</span></span>
+              </div>
+              <div class="header-actions">
+                <button id="speech-toggle" class="header-button speech-toggle" type="button" aria-pressed="true" aria-label="Disable voice playback" title="Disable voice playback">🔊</button>
+                <button id="logout-btn" class="header-button" type="button" aria-label="Logout" title="Logout">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <section id="chatbot-thread" class="chatbot-thread" aria-label="Chat messages">
+            <div id="welcome" class="welcome">
+              <div class="assistant-avatar" aria-hidden="true"><img src="/static/pldt-logo.png" alt=""></div>
+              <h2 id="welcome-title">How can I help you?</h2>
+              <p id="welcome-description">Ask about fiber plans, internet services, billing, or any PLDT support.</p>
+              <div id="quick-prompts" class="quick-prompts" aria-label="Suggested questions">
+                <button class="quick-prompt" type="button" data-prompt-key="plans"><span>What fiber plans does PLDT Home offer?</span><span>→</span></button>
+                <button class="quick-prompt" type="button" data-prompt-key="services"><span>How do I check my data usage and balance?</span><span>→</span></button>
+                <button class="quick-prompt" type="button" data-prompt-key="support"><span>What should I do if my internet is slow?</span><span>→</span></button>
+              </div>
+            </div>
+          </section>
+
+          <div class="composer-wrap">
+            <form id="chatbot-form" class="composer">
+              <label id="message-label" class="sr-only" for="chatbot-message">Ask a question</label>
+              <input id="chatbot-message" name="message" type="text" placeholder="Ask a question about PLDT..." autocomplete="off">
+              <button id="voice-input" class="voice-input-button" type="button" aria-label="Voice input" title="Voice input">
+                <svg class="microphone-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"></path></svg>
+                <svg class="stop-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1"></rect></svg>
+              </button>
+              <button type="submit" aria-label="Send message">
+                <svg class="send-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8-3-8Z"></path><path d="M7 12h14"></path></svg>
+              </button>
+            </form>
+          </div>
+      </div>
+    </main>
+
+    <script>
+      const chatbotForm = document.getElementById("chatbot-form");
+      const chatbotInput = document.getElementById("chatbot-message");
+      const chatbotThread = document.getElementById("chatbot-thread");
+      const chatbotSubmit = chatbotForm.querySelector('button[type="submit"]');
+      const welcome = document.getElementById("welcome");
+      const pageToast = document.getElementById("page-toast");
+      const speechToggle = document.getElementById("speech-toggle");
+      const voiceInputButton = document.getElementById("voice-input");
+      const quickPromptButtons = [...document.querySelectorAll("[data-prompt-key]")];
+      let speechEnabled = true;
+      let activeSpeechSocket = null;
+      let activeAudio = null;
+      let activeAudioUrl = "";
+      let istSession = null;
+      const IST_SILENCE_THRESHOLD = 0.015;
+      const IST_SILENCE_TIMEOUT_MS = 2000;
+      const IST_SPEECH_START_TIMEOUT_MS = 5000;
+
+      const translations = {
+        pageTitle: "PLDT Chat Demo",
+        appLabel: "PLDT Mobile Chat Demo",
+        brandStatus: "Online · Here to help",
+        newChat: "Home",
+        threadLabel: "Chat messages",
+        welcomeTitle: "How can I help you?",
+        welcomeDescription: "Ask about fiber plans, internet services, billing, or any PLDT support.",
+        suggestedQuestions: "Suggested questions",
+        messageLabel: "Ask a question",
+        placeholder: "Ask a question about PLDT...",
+        send: "Send message",
+        understanding: "Understanding your question...",
+        searchingFor: "Searching for: ",
+        found: (count) => count + " result(s) found.",
+        noResults: "No results found.",
+        unavailable: "Unable to answer your question at this time",
+        viewMore: "View more",
+        disableSpeech: "Disable voice playback",
+        enableSpeech: "Enable voice playback",
+        startVoiceInput: "Voice input",
+        stopVoiceInput: "Stop voice input",
+        prompts: {
+          plans: [
+            "What fiber plans does PLDT Home offer and how can I subscribe?",
+            "What is the speed and price of PLDT Home Fiber Plan 1699?",
+            "How do I upgrade my current PLDT plan to a faster fiber plan?",
+            "What are the benefits of PLDT Home Fiber Unli Fibr plans?",
+            "Does PLDT offer bundled plans with entertainment services?",
+            "What is the difference between PLDT Home Fiber and DSL plans?"
+          ],
+          services: [
+            "How do I check my data usage and remaining balance?",
+            "How can I pay my PLDT bill online?",
+            "What payment methods are accepted for PLDT bills?",
+            "How do I set up auto-pay for my PLDT subscription?",
+            "How can I change my billing due date?",
+            "What is the PLDT Home app and how do I use it?"
+          ],
+          support: [
+            "What should I do if my internet connection is slow?",
+            "How do I reset my PLDT Home WiFi password?",
+            "How do I report a service outage in my area?",
+            "How can I request a technician visit for my PLDT connection?",
+            "What are the common troubleshooting steps for PLDT Home Fiber?",
+            "How do I track my service request or ticket status?"
+          ]
+        }
+      };
+
+      const selectedPromptIndexes = Object.fromEntries(
+        quickPromptButtons.map((button) => {
+          const promptKey = button.dataset.promptKey;
+          return [promptKey, Math.floor(Math.random() * translations.prompts[promptKey].length)];
+        })
+      );
+
+      function applyTranslations() {
+        document.title = translations.pageTitle;
+        document.querySelector(".app-shell").setAttribute("aria-label", translations.appLabel);
+        document.getElementById("brand-status").textContent = translations.brandStatus;
+        document.getElementById("new-chat").setAttribute("aria-label", translations.newChat);
+        document.getElementById("new-chat").title = translations.newChat;
+        updateSpeechToggle();
+        chatbotThread.setAttribute("aria-label", translations.threadLabel);
+        chatbotInput.placeholder = translations.placeholder;
+        document.getElementById("message-label").textContent = translations.messageLabel;
+        chatbotSubmit.setAttribute("aria-label", translations.send);
+        updateVoiceInputButton();
+
+        if (welcome && welcome.isConnected) {
+          document.getElementById("welcome-title").textContent = translations.welcomeTitle;
+          document.getElementById("welcome-description").textContent = translations.welcomeDescription;
+          document.getElementById("quick-prompts").setAttribute("aria-label", translations.suggestedQuestions);
+          quickPromptButtons.forEach((button) => {
+            const promptKey = button.dataset.promptKey;
+            const prompt = translations.prompts[promptKey][selectedPromptIndexes[promptKey]];
+            button.dataset.prompt = prompt;
+            button.querySelector("span").textContent = prompt;
+          });
+        }
+      }
+
+      function updateSpeechToggle() {
+        const label = speechEnabled ? translations.disableSpeech : translations.enableSpeech;
+        speechToggle.textContent = speechEnabled ? "🔊" : "🔇";
+        speechToggle.classList.toggle("is-disabled", !speechEnabled);
+        speechToggle.setAttribute("aria-pressed", String(speechEnabled));
+        speechToggle.setAttribute("aria-label", label);
+        speechToggle.title = label;
+      }
+
+      function stopSpeech() {
+        if (activeSpeechSocket) {
+          activeSpeechSocket.close();
+          activeSpeechSocket = null;
+        }
+        if (activeAudio) {
+          activeAudio.pause();
+          activeAudio = null;
+        }
+        if (activeAudioUrl) {
+          URL.revokeObjectURL(activeAudioUrl);
+          activeAudioUrl = "";
+        }
+      }
+
+      function speechTextFromAnswer(answer) {
+        return String(answer)
+          .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+          .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+          .replace(/https?:\/\/\S+/gi, " ")
+          .replace(/\[(?:\d+\s*,\s*)*\d+\]/g, " ")
+          .replace(/^#{1,6}\s+/gm, "")
+          .replace(/^\s*(?:[-*+] |\d+\.\s+)/gm, "")
+          .replace(/[`*_~]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 2000);
+      }
+
+      function bytesToBase64(bytes) {
+        let binary = "";
+        for (let offset = 0; offset < bytes.length; offset += 32768) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + 32768));
+        }
+        return btoa(binary);
+      }
+
+      function utf8ToBase64(value) {
+        return bytesToBase64(new TextEncoder().encode(value));
+      }
+
+      function decodeAudioChunk(value) {
+        const binary = atob(value);
+        const bytes = new Uint8Array(binary.length);
+        for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+        return bytes;
+      }
+
+      async function speakAnswer(answer) {
+        const text = speechTextFromAnswer(answer);
+        if (!speechEnabled || !text) return;
+
+        try {
+          const response = await fetch("/api/tts-auth?language=en");
+          if (!response.ok) throw new Error("TTS authorization unavailable");
+          const auth = await response.json();
+          if (!speechEnabled) return;
+
+          stopSpeech();
+          const audioChunks = [];
+          const socketUrl = new URL(auth.url);
+          if (window.location.protocol === "https:" && socketUrl.protocol === "ws:") {
+            socketUrl.protocol = "wss:";
+          }
+          const socket = new WebSocket(socketUrl);
+          activeSpeechSocket = socket;
+
+          socket.addEventListener("open", () => {
+            socket.send(JSON.stringify({
+              common: { app_id: auth.appId },
+              business: {
+                aue: "lame",
+                auf: "audio/L16;rate=16000",
+                vcn: auth.voice,
+                speed: 50,
+                volume: 50,
+                pitch: 50,
+                tte: "UTF8",
+                sfl: 1
+              },
+              data: { status: 2, text: utf8ToBase64(text) }
+            }));
+          });
+
+          socket.addEventListener("message", async (event) => {
+            try {
+              const payload = JSON.parse(event.data);
+              if (payload.code !== 0) throw new Error(payload.message || "TTS synthesis failed");
+              if (payload.data && payload.data.audio) audioChunks.push(decodeAudioChunk(payload.data.audio));
+              if (payload.data && payload.data.status === 2) {
+                socket.close();
+                activeSpeechSocket = null;
+                if (!speechEnabled || !audioChunks.length) return;
+                activeAudioUrl = URL.createObjectURL(new Blob(audioChunks, { type: "audio/mpeg" }));
+                activeAudio = new Audio(activeAudioUrl);
+                activeAudio.addEventListener("ended", stopSpeech, { once: true });
+                await activeAudio.play();
+              }
+            } catch (error) {
+              socket.close();
+              activeSpeechSocket = null;
+              console.warn("Unable to process synthesized speech", error);
+            }
+          });
+          socket.addEventListener("error", () => console.warn("TTS WebSocket connection failed"));
+        } catch (error) {
+          console.warn("Unable to play synthesized speech", error);
+        }
+      }
+
+      function updateVoiceInputButton() {
+        const recording = Boolean(istSession);
+        const label = recording ? translations.stopVoiceInput : translations.startVoiceInput;
+        voiceInputButton.classList.toggle("is-recording", recording);
+        voiceInputButton.setAttribute("aria-pressed", String(recording));
+        voiceInputButton.setAttribute("aria-label", label);
+        voiceInputButton.title = label;
+      }
+
+      function pcm16Bytes(input, inputSampleRate) {
+        const ratio = inputSampleRate / 16000;
+        const outputLength = Math.floor(input.length / ratio);
+        const bytes = new Uint8Array(outputLength * 2);
+        const view = new DataView(bytes.buffer);
+
+        for (let outputIndex = 0; outputIndex < outputLength; outputIndex += 1) {
+          const start = Math.floor(outputIndex * ratio);
+          const end = Math.max(start + 1, Math.min(input.length, Math.floor((outputIndex + 1) * ratio)));
+          let total = 0;
+          for (let inputIndex = start; inputIndex < end; inputIndex += 1) total += input[inputIndex];
+          const sample = Math.max(-1, Math.min(1, total / (end - start)));
+          view.setInt16(outputIndex * 2, sample < 0 ? sample * 32768 : sample * 32767, true);
+        }
+        return bytes;
+      }
+
+      function sendIstFrame(session, audio, status) {
+        if (session.socket.readyState !== WebSocket.OPEN) return;
+        const data = {
+          status,
+          format: "audio/L16;rate=16000",
+          encoding: "raw",
+          audio: audio.length ? bytesToBase64(audio) : ""
+        };
+
+        if (!session.sentFirst) {
+          data.status = 0;
+          session.sentFirst = true;
+          session.socket.send(JSON.stringify({
+            common: { app_id: session.appId },
+            business: {
+              request_id: session.requestId,
+              language: "mix",
+              accent: "mandarin",
+              domain: "cbm_mix_stream",
+              language_name: session.language,
+              dwa: "wpgs"
+            },
+            data
+          }));
+          return;
+        }
+        session.socket.send(JSON.stringify({ data }));
+      }
+
+      function appendIstAudio(session, bytes) {
+        const combined = new Uint8Array(session.pending.length + bytes.length);
+        combined.set(session.pending);
+        combined.set(bytes, session.pending.length);
+        let offset = 0;
+        while (combined.length - offset >= 1280) {
+          sendIstFrame(session, combined.subarray(offset, offset + 1280), 1);
+          offset += 1280;
+        }
+        session.pending = combined.slice(offset);
+      }
+
+      function updateIstTranscript(session, result) {
+        if (!result || !Array.isArray(result.ws)) return;
+        const text = result.ws.map((word) => {
+          const candidate = Array.isArray(word.cw) ? word.cw[0] : null;
+          return candidate && typeof candidate.w === "string" ? candidate.w : "";
+        }).join("");
+        const sequence = Number.isInteger(result.sn) ? result.sn : session.results.size;
+
+        if (result.pgs === "rpl" && Array.isArray(result.rg)) {
+          for (let index = result.rg[0]; index <= result.rg[1]; index += 1) session.results.delete(index);
+        }
+        if (text) session.results.set(sequence, text);
+
+        const transcript = [...session.results.entries()]
+          .sort((left, right) => left[0] - right[0])
+          .map((entry) => entry[1])
+          .join("");
+        chatbotInput.value = session.initialText + (session.initialText && transcript ? " " : "") + transcript;
+      }
+
+      function releaseIstMedia(session) {
+        if (session.mediaReleased) return;
+        session.mediaReleased = true;
+        if (session.processor) session.processor.disconnect();
+        if (session.source) session.source.disconnect();
+        if (session.silentGain) session.silentGain.disconnect();
+        if (session.stream) session.stream.getTracks().forEach((track) => track.stop());
+        if (session.audioContext && session.audioContext.state !== "closed") session.audioContext.close();
+        if (istSession === session) istSession = null;
+        updateVoiceInputButton();
+      }
+
+      function stopVoiceInput() {
+        const session = istSession;
+        if (!session) return;
+        releaseIstMedia(session);
+        if (session.socket.readyState === WebSocket.OPEN) {
+          if (session.pending.length) sendIstFrame(session, session.pending, 1);
+          if (session.sentFirst) sendIstFrame(session, new Uint8Array(0), 2);
+          else session.socket.close();
+        } else {
+          session.socket.close();
+        }
+      }
+
+      function startIstCapture(session) {
+        if (istSession !== session) return;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        const source = audioContext.createMediaStreamSource(session.stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+        const silentGain = audioContext.createGain();
+        silentGain.gain.value = 0;
+        session.audioContext = audioContext;
+        session.source = source;
+        session.processor = processor;
+        session.silentGain = silentGain;
+        processor.addEventListener("audioprocess", (event) => {
+          if (istSession !== session) return;
+          const samples = event.inputBuffer.getChannelData(0);
+          let squareSum = 0;
+          for (let index = 0; index < samples.length; index += 1) squareSum += samples[index] * samples[index];
+          const rms = Math.sqrt(squareSum / samples.length);
+          const now = performance.now();
+
+          if (rms >= IST_SILENCE_THRESHOLD) {
+            session.hasDetectedSpeech = true;
+            session.lastSpeechAt = now;
+          } else {
+            const silenceLimit = session.hasDetectedSpeech
+              ? IST_SILENCE_TIMEOUT_MS
+              : IST_SPEECH_START_TIMEOUT_MS;
+            const silenceStartedAt = session.hasDetectedSpeech ? session.lastSpeechAt : session.captureStartedAt;
+            if (now - silenceStartedAt >= silenceLimit) {
+              stopVoiceInput();
+              return;
+            }
+          }
+          appendIstAudio(session, pcm16Bytes(samples, audioContext.sampleRate));
+        });
+        session.captureStartedAt = performance.now();
+        session.lastSpeechAt = session.captureStartedAt;
+        session.hasDetectedSpeech = false;
+        source.connect(processor);
+        processor.connect(silentGain);
+        silentGain.connect(audioContext.destination);
+      }
+
+      async function startVoiceInput() {
+        if (istSession || chatbotSubmit.disabled) return;
+        voiceInputButton.disabled = true;
+        stopSpeech();
+        let stream;
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("Microphone input is not supported");
+          }
+          const response = await fetch("/api/ist-auth?language=en");
+          if (!response.ok) throw new Error("IST authorization unavailable");
+          const auth = await response.json();
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+          });
+          const socketUrl = new URL(auth.url);
+          if (window.location.protocol === "https:" && socketUrl.protocol === "ws:") socketUrl.protocol = "wss:";
+          const socket = new WebSocket(socketUrl);
+          const session = {
+            socket,
+            stream,
+            appId: auth.appId,
+            language: auth.language,
+            requestId: crypto.randomUUID(),
+            initialText: chatbotInput.value.trim(),
+            results: new Map(),
+            pending: new Uint8Array(0),
+            sentFirst: false
+          };
+          istSession = session;
+          updateVoiceInputButton();
+
+          socket.addEventListener("open", () => startIstCapture(session));
+          socket.addEventListener("message", (event) => {
+            try {
+              const payload = JSON.parse(event.data);
+              if (payload.code !== 0) throw new Error(payload.message || "IST transcription failed");
+              if (payload.data && payload.data.result) updateIstTranscript(session, payload.data.result);
+              if (payload.data && payload.data.status === 2) {
+                releaseIstMedia(session);
+                socket.close();
+              }
+            } catch (error) {
+              console.warn("Unable to process voice input", error);
+              releaseIstMedia(session);
+              socket.close();
+            }
+          });
+          socket.addEventListener("error", () => {
+            console.warn("IST WebSocket connection failed");
+            releaseIstMedia(session);
+          });
+          socket.addEventListener("close", () => releaseIstMedia(session));
+        } catch (error) {
+          if (stream) stream.getTracks().forEach((track) => track.stop());
+          console.warn("Unable to start voice input", error);
+        } finally {
+          voiceInputButton.disabled = false;
+          updateVoiceInputButton();
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+      }
+
+      function renderInlineMarkdown(value) {
+        return value
+          .replace(/`([^`]+)`/g, "<code>$1</code>")
+          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+          .replace(/(^|\s)_([^_\n]+)_(?=\s|$)/g, "$1<em>$2</em>");
+      }
+
+      function renderMarkdown(value) {
+        let html = "";
+        let listType = "";
+        let paragraph = [];
+
+        function closeParagraph() {
+          if (paragraph.length) html += "<p>" + paragraph.join("<br>") + "</p>";
+          paragraph = [];
+        }
+
+        function closeList() {
+          if (listType) html += "</" + listType + ">";
+          listType = "";
+        }
+
+        escapeHtml(value).split(/\r?\n/).forEach((line) => {
+          const heading = line.match(/^(#{1,3})\s+(.+)$/);
+          const unorderedItem = line.match(/^[-*]\s+(.+)$/);
+          const orderedItem = line.match(/^\d+\.\s+(.+)$/);
+
+          if (!line.trim()) {
+            closeParagraph();
+            closeList();
+          } else if (heading) {
+            closeParagraph();
+            closeList();
+            const level = heading[1].length;
+            html += "<h" + level + ">" + renderInlineMarkdown(heading[2]) + "</h" + level + ">";
+          } else if (unorderedItem || orderedItem) {
+            closeParagraph();
+            const nextListType = unorderedItem ? "ul" : "ol";
+            if (listType && listType !== nextListType) closeList();
+            if (!listType) {
+              listType = nextListType;
+              html += "<" + listType + ">";
+            }
+            html += "<li>" + renderInlineMarkdown((unorderedItem || orderedItem)[1]) + "</li>";
+          } else {
+            closeList();
+            paragraph.push(renderInlineMarkdown(line));
+          }
+        });
+
+        closeParagraph();
+        closeList();
+        return html;
+      }
+
+      function appendMessage(kind, html) {
+        if (welcome && welcome.isConnected) welcome.remove();
+        const message = document.createElement("article");
+        message.className = "chatbot-message chatbot-message--" + kind;
+        message.lang = "en";
+        message.dir = "ltr";
+        message.innerHTML = html;
+        chatbotThread.append(message);
+        chatbotThread.scrollTop = chatbotThread.scrollHeight;
+        return message;
+      }
+
+      function renderResults(groups) {
+        const groupList = Array.isArray(groups) ? groups.filter((group) => group && Array.isArray(group.docs) && group.docs.length) : [];
+        const sections = groupList.map((group) => {
+          const cards = group.docs.map((doc) =>
+            '<article class="search-card">' +
+              '<h3 class="search-card-title">' + escapeHtml(doc.title || doc.url || "") + "</h3>" +
+              (doc.summary ? '<p class="search-card-summary">' + escapeHtml(doc.summary) + "</p>" : "") +
+              (doc.url ? '<a class="search-card-link" href="' + escapeHtml(doc.url) +
+                '" target="_blank" rel="noreferrer noopener">' +
+                '<span class="search-card-link-icon" aria-hidden="true">P</span>' +
+                "<span>Start at 40 Points</span></a>" : "") +
+            "</article>"
+          ).join("");
+          return '<section class="search-group">' + cards + "</section>";
+        }).join("");
+        return sections || '<p class="search-empty">' + escapeHtml(translations.noResults) + "</p>";
+      }
+
+      async function sendMessage(message) {
+        const trimmedMessage = message.trim();
+        if (!trimmedMessage || chatbotSubmit.disabled) return;
+        if (istSession) stopVoiceInput();
+
+        appendMessage("user", escapeHtml(trimmedMessage));
+        chatbotInput.value = "";
+        chatbotSubmit.disabled = true;
+        voiceInputButton.disabled = true;
+        const loading = appendMessage("loading", translations.understanding);
+        let buffer = "";
+        const decoder = new TextDecoder();
+
+        function updateLoading(html) {
+          loading.innerHTML = html;
+          chatbotThread.scrollTop = chatbotThread.scrollHeight;
+        }
+
+        function handleEvent(type, payload) {
+          if (type === "status") updateLoading(escapeHtml(payload.message));
+          if (type === "query") {
+            updateLoading(translations.searchingFor + escapeHtml(payload.query));
+          }
+          if (type === "search") updateLoading(escapeHtml(translations.found(payload.count)));
+          if (type === "results") {
+            loading.className = "chatbot-message chatbot-message--assistant";
+            updateLoading(renderResults(payload.groups));
+          }
+          if (type === "error") updateLoading(escapeHtml(payload.error));
+        }
+
+        function consumeEvents() {
+          const records = buffer.split(/\r?\n\r?\n/);
+          buffer = records.pop();
+          records.forEach((record) => {
+            const type = (record.match(/^event:\s*(.+)\r?$/m) || [])[1];
+            const data = (record.match(/^data:\s*(.+)\r?$/m) || [])[1];
+            if (!type || !data) return;
+            try { handleEvent(type, JSON.parse(data)); } catch {}
+          });
+        }
+
+        try {
+          const response = await fetch("/api/chatbot", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: trimmedMessage, language: "en" })
+          });
+          if (!response.ok || !response.body) throw new Error(translations.unavailable);
+          const reader = response.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+            consumeEvents();
+            if (done) break;
+          }
+        } catch (error) {
+          updateLoading(escapeHtml(error.message || translations.unavailable));
+        } finally {
+          chatbotSubmit.disabled = false;
+          voiceInputButton.disabled = false;
+          chatbotInput.focus();
+        }
+      }
+
+      chatbotForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        sendMessage(chatbotInput.value);
+      });
+
+      quickPromptButtons.forEach((button) => {
+        button.addEventListener("click", () => sendMessage(button.dataset.prompt || ""));
+      });
+
+      speechToggle.addEventListener("click", () => {
+        speechEnabled = !speechEnabled;
+        if (!speechEnabled) stopSpeech();
+        updateSpeechToggle();
+      });
+      voiceInputButton.addEventListener("click", () => {
+        if (istSession) stopVoiceInput();
+        else startVoiceInput();
+      });
+      document.getElementById("new-chat").addEventListener("click", () => {
+        if (istSession) stopVoiceInput();
+        window.location.reload();
+      });
+      applyTranslations();
+
+      // Check login status on page load
+      async function checkLoginStatus() {
+        try {
+          const response = await fetch('/api/user');
+          const data = await response.json();
+          if (!data.loggedIn) {
+            window.location.href = '/login.html';
+          }
+        } catch (error) {
+          window.location.href = '/login.html';
+        }
+      }
+      checkLoginStatus();
+
+      // Logout button handler
+      document.getElementById("logout-btn").addEventListener("click", async () => {
+        try {
+          await fetch('/api/logout', { method: 'POST' });
+          window.location.href = '/login.html';
+        } catch (error) {
+          window.location.href = '/login.html';
+        }
+      });
+    </script>
+  </body>
+</html>

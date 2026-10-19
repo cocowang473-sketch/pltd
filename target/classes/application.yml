@@ -1,0 +1,40 @@
+server:
+  port: ${PORT:3010}
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: phil-demo
+
+logging:
+  level:
+    root: INFO
+    com.iflytek.hy: INFO
+
+# OpenAI-compatible chat completion model used by the chatbot pipeline.
+openai:
+  base-url: ${OPENAI_BASE_URL:https://maas-api.cn-huabei-1.xf-yun.com/v2}
+  api-key: ${OPENAI_API_KEY:9b3431fac7de06a2d4368921f4eea9c5:MDExMzY4M2ExOTViOTFmMDZkOTEwZjk3}
+  model: ${OPENAI_MODEL:xopglm51}
+
+# iFlytek streaming speech services. IST and TTS can use separate credentials.
+xfyun:
+  tts:
+    url: ${XFYUN_TTS_URL:ws://tts-api.xfyun.cn/v2/tts}
+    app-id: ${XFYUN_TTS_APP_ID:5cda3d3a}
+    api-key: ${XFYUN_TTS_API_KEY:6154e0f6d3ef27d4e3c42b6ada707868}
+    api-secret: ${XFYUN_TTS_API_SECRET:ZTkwMWFhMmUzOWYzZjNiNGFkODZjY2E3}
+  ist:
+    url: ${XFYUN_IST_URL:wss://ist-api.xfyun.cn/v2/ist}
+    app-id: ${XFYUN_IST_APP_ID:5cda3d3a}
+    api-key: ${XFYUN_IST_API_KEY:6154e0f6d3ef27d4e3c42b6ada707868}
+    api-secret: ${XFYUN_IST_API_SECRET:ZTkwMWFhMmUzOWYzZjNiNGFkODZjY2E3}
+
+# iFlytek lynxiao retrieval service used by /api/search and the chatbot pipeline.
+lynxiao:
+  route-api-url: ${LYNXIAO_ROUTE_URL:http://lynxiao-search-api-hf-internal.xf-yun.com/v1/route}
+  app-id: ${LYNXIAO_APP_ID:qctnk4ih}
+  api-secret: ${LYNXIAO_API_SECRET:9E10699F804F43ABB4773C66}
+  prod-code: ${LYNXIAO_PROD_CODE:PLDT_PH_Search}
+  env-type: ${LYNXIAO_ENV_TYPE:1}
+  route-idc: ${LYNXIAO_ROUTE_IDC:hf}
